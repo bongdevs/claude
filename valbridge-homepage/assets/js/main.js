@@ -259,7 +259,9 @@
   });
 
   /* ---------- reveal on scroll ---------- */
-  var reveals = $$('.vb-reveal');
+  // Hero is above the fold: animate in on load (not on scroll) so CTAs never stay hidden.
+  requestAnimationFrame(function () { $$('.vb-hero .vb-reveal').forEach(function (el) { el.classList.add('is-in'); }); });
+  var reveals = $$('.vb-reveal:not(.vb-hero .vb-reveal)');
   if ('IntersectionObserver' in window && !reduceMotion) {
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (en) { if (en.isIntersecting) { en.target.classList.add('is-in'); io.unobserve(en.target); } });
