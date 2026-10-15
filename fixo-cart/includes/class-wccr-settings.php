@@ -96,7 +96,9 @@ class WCCR_Settings {
 			'whatsapp_custom_body'    => array( 'type' => 'raw_textarea', 'default' => '{"to":"{phone}","message":"{message}"}' ),
 			'notify_events'           => array( 'type' => 'events', 'default' => self::default_events() ),
 			'lead_trigger'            => array( 'type' => 'enum', 'default' => 'any', 'options' => array( 'any', 'phone', 'email', 'both' ) ),
-			'lead_delay_minutes'      => array( 'type' => 'int', 'default' => 0, 'max' => 1440 ),
+			'lead_send_mode'          => array( 'type' => 'enum', 'default' => 'inactive', 'options' => array( 'inactive', 'delay', 'instant' ) ),
+			'lead_delay_minutes'      => array( 'type' => 'int', 'default' => 3, 'max' => 1440 ),
+			'lead_max_wait_minutes'   => array( 'type' => 'int', 'default' => 30, 'min' => 5, 'max' => 1440 ),
 			'lead_min_phone_digits'   => array( 'type' => 'int', 'default' => 10, 'min' => 6, 'max' => 15 ),
 			'table_columns'           => array( 'type' => 'columns', 'default' => array(
 				'id' => true, 'customer' => true, 'address' => true, 'products' => true,

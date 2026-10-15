@@ -574,7 +574,7 @@
 			case 'alert_abandoned': return t( 'Cart became abandoned' );
 			case 'alert_high_value': return t( 'High-value cart alert' );
 			case 'alert_recovery': return t( 'Recovered by admin' );
-			case 'lead_notified': return d.delay_minutes ? t( 'Lead notification scheduled' ) + ' (' + d.delay_minutes + ' ' + t( 'min delay' ) + ')' : t( 'Lead notification sent to Telegram / WhatsApp' );
+			case 'lead_notified': return 'inactive' === d.mode ? t( 'Lead alert waiting until the shopper is inactive for' ) + ' ' + d.delay_minutes + ' ' + t( 'min' ) : ( d.delay_minutes ? t( 'Lead alert scheduled' ) + ' (' + d.delay_minutes + ' ' + t( 'min delay' ) + ')' : t( 'Lead alert sent to Telegram / WhatsApp' ) );
 			default: return String( ev.event_type || '' ).replace( /_/g, ' ' );
 		}
 	}
@@ -1399,6 +1399,12 @@
 					channelCell( e[ 0 ], 'telegram', group ), channelCell( e[ 0 ], 'whatsapp', group ) );
 			} );
 		}
+		var mode = s.lead_send_mode || 'inactive';
+		var SEND_MODES = [
+			[ 'inactive', t( 'When the shopper stops' ), t( 'Wait while they are still on checkout; send only if they go idle without ordering. Recommended.' ), 'pulse' ],
+			[ 'delay', t( 'After a fixed wait' ), t( 'Send X minutes after the contact was entered, unless they ordered.' ), 'clock' ],
+			[ 'instant', t( 'Instantly' ), t( 'Send the moment a phone or email is typed.' ), 'zap' ]
+		];
 		var LEAD_OPTIONS = [
 			[ 'phone', t( 'Phone number entered' ), t( 'Alert as soon as a valid phone number is typed.' ), 'phone' ],
 			[ 'email', t( 'Email entered' ), t( 'Alert as soon as a valid email is typed.' ), 'mail' ],
@@ -1462,12 +1468,24 @@
 								el( 'span', { className: 'cr-choice-text' }, el( 'strong', null, o[ 1 ] ), el( 'span', null, o[ 2 ] ) ),
 								el( 'span', { className: 'cr-choice-radio', 'aria-hidden': 'true' } ) );
 						} ) ) ),
+					el( Field, { label: t( 'When to send' ) },
+						el( 'div', { className: 'cr-choice-grid cr-choice-grid--3', role: 'radiogroup', 'aria-label': t( 'When to send' ) }, SEND_MODES.map( function ( o ) {
+							var on = ( s.lead_send_mode || 'inactive' ) === o[ 0 ];
+							return el( 'button', { key: o[ 0 ], type: 'button', role: 'radio', 'aria-checked': on, className: cx( 'cr-choice', on && 'is-on' ), onClick: function () { set( 'lead_send_mode', o[ 0 ] ); } },
+								el( 'span', { className: 'cr-choice-icon' }, el( Icon, { name: o[ 3 ], size: 16 } ) ),
+								el( 'span', { className: 'cr-choice-text' }, el( 'strong', null, o[ 1 ] ), el( 'span', null, o[ 2 ] ) ),
+								el( 'span', { className: 'cr-choice-radio', 'aria-hidden': 'true' } ) );
+						} ) ) ),
 					el( 'div', { className: 'cr-form-grid' },
-						el( Field, { label: t( 'Wait before sending' ), help: t( '0 = instantly. With a delay, the alert is skipped if the shopper places the order in the meantime.' ) },
-							el( TextInput, { type: 'number', min: 0, max: 1440, value: s.lead_delay_minutes, suffix: t( 'minutes' ), onChange: function ( v ) { set( 'lead_delay_minutes', v ); } } ) ),
+						'inactive' === mode ? el( Field, { label: t( 'Send after the shopper is inactive for' ), help: t( 'While the checkout page is open and the shopper is typing or active, nothing is sent.' ) },
+							el( TextInput, { type: 'number', min: 1, max: 60, value: s.lead_delay_minutes, suffix: t( 'minutes' ), onChange: function ( v ) { set( 'lead_delay_minutes', v ); } } ) ) : null,
+						'inactive' === mode ? el( Field, { label: t( 'Send anyway after' ), help: t( 'If the page stays open this long without an order, send the alert (marked "Still on the checkout page").' ) },
+							el( TextInput, { type: 'number', min: 5, max: 1440, value: s.lead_max_wait_minutes, suffix: t( 'minutes' ), onChange: function ( v ) { set( 'lead_max_wait_minutes', v ); } } ) ) : null,
+						'delay' === mode ? el( Field, { label: t( 'Wait' ), help: t( 'Sent this long after the phone / email was entered, unless the order was placed.' ) },
+							el( TextInput, { type: 'number', min: 1, max: 1440, value: s.lead_delay_minutes, suffix: t( 'minutes' ), onChange: function ( v ) { set( 'lead_delay_minutes', v ); } } ) ) : null,
 						el( Field, { label: t( 'Valid phone number length' ), help: t( 'Digits required before a phone counts (Bangladesh mobile = 11).' ) },
 							el( TextInput, { type: 'number', min: 6, max: 15, value: s.lead_min_phone_digits, suffix: t( 'digits' ), onChange: function ( v ) { set( 'lead_min_phone_digits', v ); } } ) ) ),
-					el( 'p', { className: 'cr-field-help' }, t( 'One alert per cart. Bots are never reported.' ) ) ),
+					el( 'p', { className: 'cr-field-help' }, 'instant' === mode ? t( 'One alert per cart. Bots are never reported. Instant alerts arrive while the shopper may still be filling in the form.' ) : t( 'One alert per cart. No alert if the shopper places the order — also when they order from another tab or device with the same phone or email. Bots are never reported.' ) ) ),
 
 				el( SettingsSection, { title: t( 'Which events go where' ), description: t( 'Fine-tune each event per channel. Greyed switches are off because the channel is disabled or its "Send notifications for" setting excludes that group.' ) },
 					el( 'div', { className: 'cr-table-wrap' }, el( 'table', { className: 'cr-matrix' },

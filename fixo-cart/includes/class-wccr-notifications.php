@@ -234,31 +234,72 @@ class WCCR_Notifications {
 		if ( WCCR_Cart::get_latest_event( $cart['id'], 'lead_notified' ) ) {
 			return;
 		}
-		$delay = (int) self::settings()['lead_delay_minutes'];
-		WCCR_Cart::log_event( $cart['id'], 'lead_notified', array( 'delay_minutes' => $delay ) );
-		if ( $delay > 0 ) {
-			$when = time() + $delay * MINUTE_IN_SECONDS;
-			if ( function_exists( 'as_schedule_single_action' ) ) {
-				as_schedule_single_action( $when, self::LEAD_HOOK, array( (int) $cart['id'] ), 'fixo-cart' );
-			} else {
-				wp_schedule_single_event( $when, self::LEAD_HOOK, array( (int) $cart['id'] ) );
-			}
+		$s     = self::settings();
+		$mode  = $s['lead_send_mode'];
+		$delay = 'instant' === $mode ? 0 : max( 1, (int) $s['lead_delay_minutes'] );
+		WCCR_Cart::log_event( $cart['id'], 'lead_notified', array( 'mode' => $mode, 'delay_minutes' => $delay ) );
+		if ( 'instant' === $mode ) {
+			self::dispatch( 'lead_captured', $cart['id'] );
 			return;
 		}
-		self::dispatch( 'lead_captured', $cart['id'] );
+		self::schedule_lead_check( (int) $cart['id'], time() + $delay * MINUTE_IN_SECONDS );
 	}
 
-	/** Delayed lead check: only alert if the shopper still has not ordered. */
+	private static function schedule_lead_check( $cart_id, $when ) {
+		if ( function_exists( 'as_schedule_single_action' ) ) {
+			as_schedule_single_action( $when, self::LEAD_HOOK, array( (int) $cart_id ), 'fixo-cart' );
+		} else {
+			wp_schedule_single_event( $when, self::LEAD_HOOK, array( (int) $cart_id ) );
+		}
+	}
+
+	/**
+	 * Delayed lead check. Sends only if the shopper has not ordered. In "when the shopper stops"
+	 * mode it keeps waiting while the checkout page is still active (the storefront heartbeat
+	 * refreshes updated_at every 30 seconds), up to lead_max_wait_minutes.
+	 */
 	public static function run_lead( $cart_id ) {
+		$s    = self::settings( true );
 		$cart = WCCR_Cart::get( (int) $cart_id );
 		if ( ! $cart ) {
 			return;
 		}
-		if ( ! empty( $cart['order_id'] ) || 'converted' === $cart['status'] ) {
-			self::log( 'lead_captured', '—', array( 'ok' => true, 'message' => __( 'Skipped: the customer completed the order before the delay ended.', 'fixo-cart' ) ), '#' . $cart['id'] );
+		if ( ! empty( $cart['order_id'] ) || 'converted' === $cart['status'] || self::has_order_since( $cart ) ) {
+			self::log( 'lead_captured', '—', array( 'ok' => true, 'message' => __( 'Skipped: the customer completed the order.', 'fixo-cart' ) ), '#' . $cart['id'] );
 			return;
 		}
+		if ( 'inactive' === $s['lead_send_mode'] ) {
+			$idle_needed = max( 1, (int) $s['lead_delay_minutes'] ) * MINUTE_IN_SECONDS;
+			$last_seen   = WCCR_Cart::to_timestamp( $cart['updated_at'] );
+			$idle        = $last_seen ? time() - $last_seen : PHP_INT_MAX;
+			$first       = WCCR_Cart::get_latest_event( $cart['id'], 'lead_notified' );
+			$started     = $first ? WCCR_Cart::to_timestamp( $first['created_at'] ) : time();
+			$max_wait    = max( 5, (int) $s['lead_max_wait_minutes'] ) * MINUTE_IN_SECONDS;
+			if ( $idle < $idle_needed && ( time() - $started ) < $max_wait ) {
+				// Still on the page — check again once they could have been idle long enough.
+				self::schedule_lead_check( (int) $cart['id'], time() + max( 60, $idle_needed - $idle + 15 ) );
+				return;
+			}
+		}
 		self::run( 'lead_captured', (int) $cart_id );
+	}
+
+	/** Did this shopper (same email or phone) place an order after the cart started — e.g. in another tab? */
+	public static function has_order_since( array $cart ) {
+		if ( ! function_exists( 'wc_get_orders' ) ) {
+			return false;
+		}
+		$created = WCCR_Cart::to_timestamp( $cart['created_at'] );
+		$base    = array(
+			'limit'        => 1,
+			'return'       => 'ids',
+			'status'       => array( 'wc-pending', 'wc-processing', 'wc-on-hold', 'wc-completed' ),
+			'date_created' => '>=' . ( $created ? $created : time() - DAY_IN_SECONDS ),
+		);
+		if ( is_email( (string) $cart['email'] ) && wc_get_orders( $base + array( 'billing_email' => $cart['email'] ) ) ) {
+			return true;
+		}
+		return '' !== trim( (string) $cart['phone'] ) && (bool) wc_get_orders( $base + array( 'billing_phone' => $cart['phone'] ) );
 	}
 
 	/**
@@ -465,7 +506,17 @@ class WCCR_Notifications {
 			array( __( 'Address', 'fixo-cart' ), $address ),
 			array( __( 'Source', 'fixo-cart' ), WCCR_Tracking::source_label( $cart ) ),
 		);
-		if ( 'lead_captured' !== $event ) {
+		if ( 'lead_captured' === $event ) {
+			$seen     = WCCR_Cart::to_timestamp( $cart['updated_at'] );
+			$idle     = $seen ? max( 0, time() - $seen ) : 0;
+			$fields[] = array(
+				__( 'Checkout', 'fixo-cart' ),
+				$idle < 90
+					? __( 'Still on the checkout page', 'fixo-cart' )
+					/* translators: %d: minutes */
+					: sprintf( __( 'Left without ordering (inactive %d min)', 'fixo-cart' ), max( 1, (int) round( $idle / 60 ) ) ),
+			);
+		} else {
 			$fields[] = array( __( 'Recovery emails sent', 'fixo-cart' ), (string) (int) $cart['emails_sent'] );
 		}
 

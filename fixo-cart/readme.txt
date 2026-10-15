@@ -7,7 +7,7 @@ Tested up to: 6.6
 Requires PHP: 7.4
 WC requires at least: 5.0
 WC tested up to: 9.5
-Stable tag: 3.0.0
+Stable tag: 3.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -31,7 +31,7 @@ Fixo Cart combines and replaces two plugins: *BongDevs Cart Recovery for WooComm
 
 = Telegram & WhatsApp notifications =
 
-* **New checkout lead alerts** — get a message as soon as a shopper enters a phone number and/or email on checkout. Choose the rule: phone, email, either one, or both. Optional delay that skips the alert if the customer completes the order.
+* **New checkout lead alerts** — get a message as soon as a shopper enters a phone number and/or email on checkout. Choose the rule: phone, email, either one, or both. By default the alert waits until the shopper leaves the checkout page and is skipped if they order.
 * **Order alerts** — new orders (classic, block checkout or created in wp-admin) plus processing, completed, cancelled/failed and refunded.
 * **Cart alerts** — abandoned carts, high-value abandoned carts and carts recovered by your team.
 * For each channel choose what it receives: **Cart**, **Order** or **Both** — then fine-tune individual events.
@@ -72,12 +72,19 @@ Open @BotFather in Telegram, send /newbot and copy the token. Send any message t
 CallMeBot is free and the quickest way to get alerts on your own phone. The WhatsApp Cloud API is the official Meta option; outside the 24-hour customer-service window it only delivers approved templates, so create a Utility template with one body variable. Any other provider with an HTTP API works through the Custom gateway option.
 
 = When exactly is a checkout lead sent? =
-Once per cart, when the cart matches your rule (phone, email, either or both) and the phone has at least the configured number of digits. With a delay, the alert is skipped if the shopper completes the order meanwhile.
+Once per cart, when the cart matches your rule (phone, email, either or both) and the phone has at least the configured number of digits. By default Fixo Cart waits until the shopper stops being active on the checkout page, and skips the alert if they place the order.
 
 = Does it work with the block checkout? =
 Yes — capture, order alerts and conversion marking support both the classic and the block (Store API) checkout.
 
 == Changelog ==
+
+= 3.0.1 =
+* Added: smarter timing for checkout lead alerts. New default "When the shopper stops" waits while the shopper is still active on the checkout page and sends only after they go idle (default 3 minutes) without ordering; if the page stays open past a maximum wait (default 30 minutes) the alert is sent marked "Still on the checkout page". "After a fixed wait" and "Instantly" are still available.
+* Added: lead alerts are skipped when the shopper ordered from another tab or device with the same phone or email.
+* Added: lead messages show whether the shopper is still on checkout or left without ordering.
+* Added: collapsible side menu in the dashboard (icons only) for wider tables; the choice is remembered.
+* Improved: IN / OUT tags in the Entry / exit column are coloured green and blue again, with "On site now" for live shoppers.
 
 = 3.0.0 =
 * New name: Fixo Cart by BongDevs (bongdevs.com), author Jahid Hasan. Replaces "BongDevs Cart Recovery for WooCommerce" and "Woo Telegram Orders" — data and settings are kept.

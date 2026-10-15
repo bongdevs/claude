@@ -620,3 +620,4 @@ body.cr-modal-open { overflow: hidden; }
 }
 @container (max-width: 860px) { .cr-nav-collapse { display: none; } }
 @media (prefers-reduced-motion: reduce) { .cr-shell { transition: none; } }
+.cr-choice-grid--3 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }

@@ -3,7 +3,7 @@
  * Plugin Name:       Fixo Cart
  * Plugin URI:        https://bongdevs.com/fixo-cart
  * Description:       Abandoned cart recovery and real-time store alerts for WooCommerce. Captures checkout leads as they type (name, phone, email, full address, cart and traffic source), recovers carts by email, WhatsApp, phone or one-click manual orders, and sends Telegram and WhatsApp notifications for new leads, new orders, order status changes, abandoned and high-value carts. Includes a live customer monitor, order dashboard, UTM, product and revenue analytics, customer segments, smart coupons and Meta CAPI / GA4 / webhook conversion tracking.
- * Version:           3.0.0
+ * Version:           3.0.1
  * Author:            Jahid Hasan
  * Author URI:        https://bongdevs.com
  * License:           GPLv2 or later
@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // No direct access.
 }
 
-define( 'FIXO_CART_VERSION', '3.0.0' );
+define( 'FIXO_CART_VERSION', '3.0.1' );
 define( 'FIXO_CART_PLUGIN_FILE', __FILE__ );
 define( 'FIXO_CART_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'FIXO_CART_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
