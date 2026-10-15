@@ -584,3 +584,14 @@ body.cr-modal-open { overflow: hidden; }
 }
 .cr-table-wrap { position: relative; }
 .cr-sr { white-space: nowrap; clip-path: inset(50%); }
+
+/* ---------- entry / exit (IN green, OUT blue) */
+.cr-ee { display: flex; flex-direction: column; gap: 3px; min-width: 150px; font-size: 12px; line-height: 18px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cr-ee-row { display: flex; align-items: center; gap: 6px; color: var(--ink); }
+.cr-ee-tag { display: inline-block; min-width: 32px; text-align: center; padding: 0 5px; border-radius: var(--radius-sm); font-size: 10px; line-height: 16px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.cr-ee-tag.is-in { background: var(--status-converted-bg); color: var(--status-converted-ink); }
+.cr-ee-tag.is-out { background: var(--status-active-bg); color: var(--status-active-ink); }
+.cr-ee-live { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: var(--status-converted-ink); }
+.cr-ee-live .cr-presence-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--live); animation: cr-pulse 1.8s ease-out infinite; }
+.cr-ee-dur { display: inline-flex; align-items: center; gap: 4px; color: var(--ink-muted); }
+@media (prefers-reduced-motion: reduce) { .cr-ee-live .cr-presence-dot { animation: none; } }

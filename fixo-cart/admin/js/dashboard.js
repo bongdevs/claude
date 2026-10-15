@@ -1008,7 +1008,7 @@
 						cols.address ? el( 'td', { className: 'cr-addr-cell' }, addr || el( 'span', { className: 'cr-muted' }, t( 'Not captured' ) ) ) : null,
 						cols.total ? el( 'td', { className: 'is-num' }, el( 'strong', null, money( c.cart_total ) ), cols.id ? el( 'div', { className: 'cr-muted cr-mono' }, '#' + c.id ) : null ) : null,
 						cols.source ? el( 'td', null, el( SourceChip, cartSource( c ) ) ) : null,
-						cols.times ? el( 'td', { className: 'cr-times' }, el( 'div', null, el( 'span', { className: 'cr-muted' }, t( 'In' ) + ' ' ), shortTime( c.entry_at ) ), el( 'div', null, el( 'span', { className: 'cr-muted' }, t( 'Out' ) + ' ' ), 'live' === c.presence_status ? t( 'on site' ) : shortTime( c.exit_at ) ), el( 'div', { className: 'cr-muted' }, duration( c.time_on_site ) ) ) : null,
+						cols.times ? el( 'td', { className: 'cr-times' }, el( EntryExit, { cart: c } ) ) : null,
 						el( 'td', null, el( 'div', { className: 'cr-status-cell' }, el( StatusBadge, { status: c.status } ),
 							el( 'div', { className: 'cr-status-sub' }, cols.live ? el( Presence, { cart: c } ) : null, c.emails_sent ? el( 'span', { className: 'cr-muted' }, ' · ' + t( 'email' ) + ' ' + c.emails_sent ) : null ) ) ),
 						el( 'td', { className: 'is-actions' }, el( 'div', { className: 'cr-row-actions' },
@@ -1055,6 +1055,17 @@
 					el( 'div', { className: 'cr-advanced-actions' }, el( Button, { variant: 'ghost', onClick: function () { patch( { date_from: '', date_to: '', min_total: '', max_total: '', source: '', device: '', presence: '', conversion_type: '', product_id: '', risk_status: '' } ); } }, t( 'Clear filters' ) ) ) ) : null,
 				table,
 				items.length ? el( Pagination, { page: page, pages: res.total_pages, total: res.total, perPage: 20, onPage: setPage } ) : null ) );
+	}
+
+	/** Entry / exit times with coloured IN (green) and OUT (blue) tags. */
+	function EntryExit( props ) {
+		var c = props.cart || {};
+		var live = 'live' === c.presence_status;
+		return el( 'div', { className: 'cr-ee' },
+			el( 'div', { className: 'cr-ee-row', title: formatDate( c.entry_at ) }, el( 'span', { className: 'cr-ee-tag is-in' }, t( 'In' ) ), shortTime( c.entry_at ) ),
+			el( 'div', { className: 'cr-ee-row', title: live ? '' : formatDate( c.exit_at ) }, el( 'span', { className: 'cr-ee-tag is-out' }, t( 'Out' ) ),
+				live ? el( 'span', { className: 'cr-ee-live' }, el( 'span', { className: 'cr-presence-dot', 'aria-hidden': 'true' } ), t( 'On site now' ) ) : shortTime( c.exit_at ) ),
+			null !== c.time_on_site && undefined !== c.time_on_site ? el( 'div', { className: 'cr-ee-dur' }, el( Icon, { name: 'clock', size: 12 } ), duration( c.time_on_site ) + ( live ? ' ' + t( 'so far' ) : ' ' + t( 'on site' ) ) ) : null );
 	}
 
 	/* ------------------------------------------------------------------ live customers */
