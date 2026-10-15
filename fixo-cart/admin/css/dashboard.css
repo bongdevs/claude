@@ -595,3 +595,28 @@ body.cr-modal-open { overflow: hidden; }
 .cr-ee-live .cr-presence-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--live); animation: cr-pulse 1.8s ease-out infinite; }
 .cr-ee-dur { display: inline-flex; align-items: center; gap: 4px; color: var(--ink-muted); }
 @media (prefers-reduced-motion: reduce) { .cr-ee-live .cr-presence-dot { animation: none; } }
+
+/* ---------- collapsible side menu */
+.cr-shell { transition: grid-template-columns .18s ease; }
+.cr-nav-brand { position: relative; }
+.cr-nav-brand-text { flex: 1; min-width: 0; }
+.cr-nav-collapse { flex: none; width: 28px; height: 28px; border-radius: var(--radius-md); border: 1px solid transparent; background: transparent; color: var(--ink-muted); display: grid; place-items: center; cursor: pointer; padding: 0; }
+.cr-nav-collapse:hover { background: var(--surface-hover); color: var(--ink); border-color: var(--line); }
+@container (min-width: 861px) {
+	.cr-shell.is-nav-collapsed { grid-template-columns: 64px minmax(0, 1fr); }
+	.cr-nav.is-collapsed { padding: var(--space-4) var(--space-2); align-items: center; }
+	.cr-nav.is-collapsed .cr-nav-brand { flex-direction: column; gap: var(--space-2); padding: 0; }
+	.cr-nav.is-collapsed .cr-nav-brand-text,
+	.cr-nav.is-collapsed .cr-nav-text { display: none; }
+	.cr-nav.is-collapsed .cr-nav-group { width: 100%; align-items: center; }
+	.cr-nav.is-collapsed .cr-nav-label { font-size: 0; height: 1px; padding: 0; margin: 0 8px var(--space-1); width: 24px; background: var(--line); }
+	.cr-nav.is-collapsed .cr-nav-item { width: 40px; height: 36px; padding: 0; justify-content: center; }
+	.cr-nav.is-collapsed .cr-nav-item.is-on::before { left: -8px; }
+	.cr-nav.is-collapsed .cr-nav-count { position: absolute; top: 1px; right: -4px; padding: 0 4px; font-size: 10px; line-height: 15px; min-width: 15px; justify-content: center; border: 2px solid var(--surface); }
+	.cr-nav.is-collapsed .cr-nav-count.is-live i { display: none; }
+	.cr-nav.is-collapsed .cr-nav-count.is-live { background: var(--live); color: var(--on-brand); }
+	.cr-nav.is-collapsed .cr-nav-foot { padding: var(--space-2) 0 0; width: 100%; display: flex; justify-content: center; }
+	.cr-nav.is-collapsed .cr-nav-foot .cr-btn { width: 36px; padding: 0; }
+}
+@container (max-width: 860px) { .cr-nav-collapse { display: none; } }
+@media (prefers-reduced-motion: reduce) { .cr-shell { transition: none; } }

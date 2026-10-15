@@ -205,7 +205,9 @@
 		undo: [ P( 'M9 14 4 9l5-5' ), P( 'M4 9h10.5a5.5 5.5 0 0 1 0 11H11' ) ],
 		moon: [ P( 'M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z' ) ],
 		sun: [ Ci( 12, 12, 4 ), P( 'M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4' ) ],
-		bag: [ P( 'M5 8h14l-1 12H6z' ), P( 'M9 8V6a3 3 0 0 1 6 0v2' ) ]
+		bag: [ P( 'M5 8h14l-1 12H6z' ), P( 'M9 8V6a3 3 0 0 1 6 0v2' ) ],
+		sidebar: [ Re( 3, 4, 18, 16, 2 ), P( 'M9 4v16' ), P( 'm15 10-2 2 2 2' ) ],
+		sidebarOpen: [ Re( 3, 4, 18, 16, 2 ), P( 'M9 4v16' ), P( 'm13 10 2 2-2 2' ) ]
 	};
 	function Icon( props ) {
 		var size = props.size || 16;
@@ -1618,10 +1620,14 @@
 	NAV.forEach( function ( g ) { g.items.forEach( function ( i ) { VIEWS[ i.key ] = i; } ); } );
 
 	function SideNav( props ) {
-		return el( 'nav', { className: 'cr-nav', 'aria-label': 'Fixo Cart' },
+		var collapsed = props.collapsed;
+		return el( 'nav', { className: cx( 'cr-nav', collapsed && 'is-collapsed' ), 'aria-label': 'Fixo Cart' },
 			el( 'div', { className: 'cr-nav-brand' },
 				el( 'span', { className: 'cr-nav-glyph', 'aria-hidden': 'true' }, el( Icon, { name: 'cart', size: 16, strokeWidth: 2 } ) ),
-				el( 'div', null, el( 'div', { className: 'cr-nav-name' }, 'Fixo Cart' ), el( 'div', { className: 'cr-nav-ver' }, 'v' + ( CFG.version || '' ) + ' · bongdevs.com' ) ) ),
+				el( 'div', { className: 'cr-nav-brand-text' }, el( 'div', { className: 'cr-nav-name' }, 'Fixo Cart' ), el( 'div', { className: 'cr-nav-ver' }, 'v' + ( CFG.version || '' ) + ' · bongdevs.com' ) ),
+				el( 'button', { type: 'button', className: 'cr-nav-collapse', onClick: props.onCollapse, 'aria-expanded': ! collapsed,
+					title: collapsed ? t( 'Expand menu' ) : t( 'Collapse menu' ), 'aria-label': collapsed ? t( 'Expand menu' ) : t( 'Collapse menu' ) },
+					el( Icon, { name: collapsed ? 'sidebarOpen' : 'sidebar', size: 16 } ) ) ),
 			NAV.map( function ( g ) {
 				return el( 'div', { className: 'cr-nav-group', key: g.label },
 					el( 'div', { className: 'cr-nav-label' }, g.label ),
@@ -1629,13 +1635,15 @@
 						var on = it.key === props.active;
 						var n = props.counts[ it.key ];
 						return el( 'a', { key: it.key, href: '?page=' + ( CFG.page_slug || 'fixo-cart' ) + '&view=' + it.key, className: cx( 'cr-nav-item', on && 'is-on' ), 'aria-current': on ? 'page' : undefined,
+							title: collapsed ? it.label + ( n ? ' (' + n + ')' : '' ) : undefined,
 							onClick: function ( e ) { if ( e.metaKey || e.ctrlKey ) return; e.preventDefault(); props.onSelect( it.key ); } },
 							el( Icon, { name: it.icon, size: 16 } ), el( 'span', { className: 'cr-nav-text' }, it.label ),
 							n ? el( 'span', { className: cx( 'cr-nav-count', 'live' === it.key && 'is-live' ) }, 'live' === it.key ? el( 'i', { 'aria-hidden': 'true' } ) : null, n > 99 ? '99+' : n ) : null );
 					} ) );
 			} ),
 			el( 'div', { className: 'cr-nav-foot' },
-				el( Button, { variant: 'ghost', size: 'sm', icon: 'dark' === props.theme ? 'sun' : 'moon', onClick: props.onTheme }, 'dark' === props.theme ? t( 'Light mode' ) : t( 'Dark mode' ) ) ) );
+				el( Button, { variant: 'ghost', size: 'sm', icon: 'dark' === props.theme ? 'sun' : 'moon', onClick: props.onTheme, title: collapsed ? ( 'dark' === props.theme ? t( 'Light mode' ) : t( 'Dark mode' ) ) : undefined },
+					collapsed ? null : ( 'dark' === props.theme ? t( 'Light mode' ) : t( 'Dark mode' ) ) ) ) );
 	}
 
 	function readUrl() {
@@ -1664,6 +1672,8 @@
 		var _o = useState( initial.order || 0 ), orderId = _o[ 0 ], setOrderId = _o[ 1 ];
 		var _k = useState( 0 ), reloadKey = _k[ 0 ], setReloadKey = _k[ 1 ];
 		var _th = useState( storageGet( 'fixo_cart_theme', 'light' ) ), theme = _th[ 0 ], setTheme = _th[ 1 ];
+		var _nc = useState( 'yes' === storageGet( 'fixo_cart_nav_collapsed', 'no' ) ), navCollapsed = _nc[ 0 ], setNavCollapsed = _nc[ 1 ];
+		function toggleNav() { var n = ! navCollapsed; setNavCollapsed( n ); storageSet( 'fixo_cart_nav_collapsed', n ? 'yes' : 'no' ); }
 
 		function loadStats() {
 			api( '/stats?days=' + days ).then( function ( s ) { setStats( s ); } ).catch( function () {} ).finally( function () { setStatsLoading( false ); } );
@@ -1705,8 +1715,8 @@
 		}
 		var tt = stats.totals || {};
 		return el( 'div', { className: 'cr-app', 'data-theme': theme },
-			el( 'div', { className: 'cr-shell' },
-				el( SideNav, { active: view, onSelect: go, counts: { carts: parseInt( tt.abandoned || 0, 10 ), live: parseInt( stats.live_count || 0, 10 ) }, theme: theme, onTheme: toggleTheme } ),
+			el( 'div', { className: cx( 'cr-shell', navCollapsed && 'is-nav-collapsed' ) },
+				el( SideNav, { active: view, onSelect: go, counts: { carts: parseInt( tt.abandoned || 0, 10 ), live: parseInt( stats.live_count || 0, 10 ) }, theme: theme, onTheme: toggleTheme, collapsed: navCollapsed, onCollapse: toggleNav } ),
 				el( 'main', { className: 'cr-main' }, content ) ),
 			drawer ? el( CartDrawer, { key: drawer.id, cart: drawer, tab: drawer._tab, settings: settings, onClose: function () { setDrawer( null ); },
 				onUpdated: function () { setReloadKey( reloadKey + 1 ); }, onDeleted: function () { setReloadKey( reloadKey + 1 ); loadStats(); }, onChanged: function () { setReloadKey( reloadKey + 1 ); loadStats(); } } ) : null,
